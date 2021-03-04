@@ -9,21 +9,24 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Region;
 import android.os.StrictMode;
 import android.util.Log;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import com.androidplot.ui.Anchor;
+import com.androidplot.ui.HorizontalPositioning;
+import com.androidplot.ui.Size;
+import com.androidplot.ui.SizeMode;
+import com.androidplot.ui.VerticalPositioning;
 import com.androidplot.xy.BoundaryMode;
-import com.androidplot.xy.StepMode;
-import com.androidplot.xy.StepModel;
-import com.androidplot.xy.StepModelFit;
-import com.androidplot.xy.XYGraphWidget;
-import com.androidplot.xy.XYSeries;
 import com.androidplot.xy.LineAndPointFormatter;
 import com.androidplot.xy.SimpleXYSeries;
+import com.androidplot.xy.StepMode;
+import com.androidplot.xy.StepModel;
+import com.androidplot.xy.XYGraphWidget;
 import com.androidplot.xy.XYPlot;
+import com.androidplot.xy.XYSeries;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -37,12 +40,10 @@ import java.net.URLConnection;
 import java.text.DecimalFormat;
 import java.text.FieldPosition;
 import java.text.Format;
-import java.text.NumberFormat;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -101,29 +102,27 @@ public class MinfinWidget extends AppWidgetProvider {
             RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.minfin_widget);
             ComponentName watchWidget = new ComponentName(context, MinfinWidget.class);
 
+            Integer height = 220,
+                    width = 440;
 
             XYPlot plot = new XYPlot(context, "");
             plot.setDrawingCacheEnabled(true);
 
             plot.setBackgroundColor(Color.TRANSPARENT);
             plot.getGraph().getBackgroundPaint().setColor(Color.TRANSPARENT);
-            plot.getGraph().getGridBackgroundPaint().setColor(Color.TRANSPARENT);
             plot.getGraph().getGridBackgroundPaint().setColor(Color.WHITE);
+            plot.getGraph().setPadding(42, 25, 20, 20);
+            plot.getGraph().setMargins(0, 0, 0, 0);
 
-
-            plot.getGraph().setPaddingRight(10);
-            plot.getGraph().setPaddingTop(10);
-
-
-
-
-            plot.layout(0, 30, 500, 280);
+            Size sz = new Size(height, SizeMode.ABSOLUTE, width, SizeMode.ABSOLUTE);
+            plot.getGraph().setSize(sz);
+            plot.layout(0, 0, width, height);
 
 
             StrictMode.ThreadPolicy policy = new StrictMode.ThreadPolicy.Builder().permitAll().build();
             StrictMode.setThreadPolicy(policy);
 
-            String str = "http://tyretrader.ua/utils/test3.php";
+            String str = "http://localhost/test3.php";
             URLConnection urlConn = null;
             BufferedReader bufferedReader = null;
             try
@@ -145,11 +144,11 @@ public class MinfinWidget extends AppWidgetProvider {
                     DecimalFormat decimalFormat = new DecimalFormat("#.00");
                     String avgTxt = decimalFormat.format(jsonObj.get("b")) + "   " + decimalFormat.format(jsonObj.get("s"));
 
-                    //String avgTxt = String.format("%.2f", jsonObj.get("b")) + "   " + String.format("%.2f", jsonObj.get("s"));
-                    remoteViews.setTextViewText(R.id.average, avgTxt);
+                    String timeStamp = new SimpleDateFormat("HH:mm").format(Calendar.getInstance().getTime()),
+                           fullInfo = avgTxt + "   " + timeStamp;
 
-                    String timeStamp = new SimpleDateFormat("HH:mm").format(Calendar.getInstance().getTime());
-                    remoteViews.setTextViewText(R.id.upd_time, timeStamp);
+                    plot.getTitle().position(18, HorizontalPositioning.ABSOLUTE_FROM_RIGHT, 3, VerticalPositioning.ABSOLUTE_FROM_TOP, Anchor.RIGHT_TOP);
+                    plot.setTitle(fullInfo);
 
                     Integer origin = (Integer) jsonObj.get("o");
 
@@ -174,13 +173,11 @@ public class MinfinWidget extends AppWidgetProvider {
 
                     List<Number> ListB = Arrays.asList(seriesB);
                     List<Integer> ListD = Arrays.asList(seriesD);
-                    //XYSeries series1 = new SimpleXYSeries(ListB, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
                     XYSeries series1 = new SimpleXYSeries(ListD, ListB, "");
                     LineAndPointFormatter series1Format = new LineAndPointFormatter(context, R.xml.line_formatter_b);
                     plot.addSeries(series1, series1Format);
 
                     List<Number> ListS = Arrays.asList(seriesS);
-                    //XYSeries series2 = new SimpleXYSeries(ListS, SimpleXYSeries.ArrayFormat.Y_VALS_ONLY, "");
                     XYSeries series2 = new SimpleXYSeries(ListD, ListS, "");
                     LineAndPointFormatter series2Format = new LineAndPointFormatter(context, R.xml.line_formatter_s);
                     plot.addSeries(series2, series2Format);
@@ -196,9 +193,10 @@ public class MinfinWidget extends AppWidgetProvider {
                     XYGraphWidget.Edge[] edges = {XYGraphWidget.Edge.BOTTOM, XYGraphWidget.Edge.LEFT};
 
                     plot.getGraph().setLineLabelEdges(edges);
+                    plot.getGraph().getLineLabelInsets().setBottom(-12);
                     plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).getPaint().setTextAlign(Paint.Align.LEFT);
-                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).getPaint().setTextSize(10);
-                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).getPaint().setColor(Color.BLACK);
+                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).getPaint().setTextSize(13);
+                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).getPaint().setColor(Color.WHITE);
 
 
                     plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.BOTTOM).setFormat(new Format() {
@@ -215,10 +213,13 @@ public class MinfinWidget extends AppWidgetProvider {
                         }
                     });
 
-                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setTextAlign(Paint.Align.LEFT);
-                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setTextSize(10);
-                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setColor(Color.BLACK);
+
+                    plot.getGraph().getLineLabelInsets().setLeft(-2);
+                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setTextAlign(Paint.Align.RIGHT);
+                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setTextSize(12);
+                    plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).getPaint().setColor(Color.WHITE);
                     plot.getGraph().getLineLabelStyle(XYGraphWidget.Edge.LEFT).setFormat(new DecimalFormat("0.00"));
+
 
                     Arrays.sort(seriesS);
                     Arrays.sort(seriesB);
